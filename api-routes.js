@@ -11,8 +11,17 @@ router.get('/', function (req, res) {
 
 var itemController = require('./itemController');
 
-router.route('/items')
+router.route('/item')
     .get(itemController.get);
+
+router.route('/items-location')
+    .get(itemController.getAllItemLocation);
+
+router.route('/item-info')
+    .get(itemController.getSpeciesInfo);
+
+router.route('/similar-items-info')
+    .get(itemController.getSimilarSpeciesInfoByItem);
 
 // Export API routes
 module.exports = router;

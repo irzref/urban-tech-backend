@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+var rp = require('request-promise');
 
 // Setup schema
 var itemSchema = mongoose.Schema({
@@ -22,10 +23,11 @@ var itemSchema = mongoose.Schema({
 });
 
 // Export Contact model
-var Item = module.exports = mongoose.model('Item', itemSchema, 'item');
+var Item = mongoose.model('Item', itemSchema, 'item');
 
+var exports = module.exports = {};
 
-module.exports.get = function (req, res) {
+exports.get = function (req, res) {
     Item.findOne(function(err, item) {
 
         if(err) {
@@ -35,4 +37,125 @@ module.exports.get = function (req, res) {
         res.json(item);
 
     });
+}
+
+var all_items_location_cache = null;
+
+exports.getAllItemLocation = function (req, res) {
+    
+    if(!all_items_location_cache) {
+
+        Item.find({},
+            {
+                '_id': 0,
+                'index_col': 1,
+                'decimalLatitude': 1,
+                'decimalLongitude': 1
+            })
+            .lean()
+            .exec(
+                function(err, items) {
+            
+                    if(err) {
+                        res.send(err);
+                    }
+            
+                    all_items_location_cache = items;
+
+                    res.json(items);
+            
+                }
+            );
+
+    } else {
+
+        res.json(all_items_location_cache);
+    }
+    
+    
+}
+
+exports.getSpeciesInfo = function (req, res) {
+    var index_col = req.query.index;
+    
+    Item.findOne({
+        index_col: index_col
+    })
+    .lean()
+    .exec(
+        function(err, item) {
+    
+            if(err) {
+                res.send(err);
+            }
+    
+            // get the image link
+            get_image_link(item.gbifID)
+                .then(function (result) {
+                    
+                    if (result.media && (result.media.length > 0)) {
+                        var media = result.media[0];
+                        
+                        if(media.identifier) {
+                            item['image'] = media.identifier;
+                        }
+
+                    }
+                    
+                    res.json(item);
+                    
+                })
+                .catch(function (err) {
+                    res.send(err);
+                });            
+    
+        }
+    );
+}
+
+exports.getSimilarSpeciesInfoByItem = function (req, res) {
+    var index_col = req.query.index;
+    
+    Item.findOne({
+        index_col: index_col
+    })
+    .lean()
+    .exec(
+        function(err, item) {
+    
+            if(err) {
+                res.send(err);
+            }
+    
+            Item.find({
+                index_col: {
+                    $in: item.sim_item
+                }
+            })
+            .lean()
+            .exec(
+                function(err, items) {
+            
+                    if(err) {
+                        res.send(err);
+                    }
+            
+                    res.json(items);
+            
+                }
+            );
+    
+        }
+    );
+}
+
+get_image_link = function(gbifID) {
+
+    var options = {
+        uri: "http://api.gbif.org/v1/occurrence/" + gbifID,        
+        json: true
+    };
+    
+    return rp(options);    
+
 }
