@@ -87,28 +87,36 @@ exports.getSpeciesInfo = function (req, res) {
     
             if(err) {
                 res.send(err);
-            }
-    
-            // get the image link
-            get_image_link(item.gbifID)
-                .then(function (result) {
-                    
-                    if (result.media && (result.media.length > 0)) {
-                        var media = result.media[0];
-                        
-                        if(media.identifier) {
-                            item['image'] = media.identifier;
-                        }
+            } else {
 
-                    }
-                    
-                    res.json(item);
-                    
-                })
-                .catch(function (err) {
-                    res.send(err);
-                });            
+                if(item) {
+
+                    // get the image link
+                    get_image_link(item.gbifID)
+                    .then(function (result) {
+                        
+                        if (result.media && (result.media.length > 0)) {
+                            var media = result.media[0];
+                            
+                            if(media.identifier) {
+                                item['image'] = media.identifier;
+                            }
     
+                        }
+                        
+                        res.json(item);
+                        
+                    })
+                    .catch(function (err) {
+                        res.send(err);
+                    });
+    
+                } else {
+                    res.send(new Error("NO_DATA_FOUND"));
+                }
+
+            }
+                                    
         }
     );
 }
