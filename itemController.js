@@ -75,6 +75,50 @@ exports.getAllItemLocation = function (req, res) {
     
 }
 
+exports.getItems = function (req, res) {
+    
+    // console.log("req ", req.query, req.body);
+
+    var draw = req.query.draw || 0;
+    var start = Number(req.query.start) || 0;
+    var length = Number(req.query.length) || 10;
+
+    Item.find({}).skip(start).limit(length)
+        .lean()
+        .exec(
+            function(err, items) {
+        
+                if(err) {
+                    res.send({
+                        error: err
+                    });
+                } else {
+
+                    Item.count({}, function(err, c) {
+                    
+                        if(err) {
+                            res.send({
+                                error: err
+                            });
+                        } else {
+
+                            res.json({
+                                draw: draw,
+                                "recordsTotal": c,
+                                "recordsFiltered": c,
+                                data: items
+                            });
+
+                        }
+                            
+                    });
+
+                }    
+                                
+            }
+        );
+}
+
 exports.getSpeciesInfo = function (req, res) {
     var index_col = req.query.index;
     

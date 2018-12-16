@@ -17,6 +17,9 @@ router.route('/item')
 router.route('/items-location')
     .get(itemController.getAllItemLocation);
 
+router.route('/items')
+    .get(itemController.getItems);
+
 router.route('/item-info')
     .get(itemController.getSpeciesInfo);
 
